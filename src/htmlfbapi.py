@@ -18,98 +18,111 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 
-import re
-import json
 import requests
 from lxml import etree
 from bs4 import BeautifulSoup
 
-PC_HOME_URL = 'https://www.facebook.com/'
-PC_LOGIN_URL = 'https://www.facebook.com/login.php'
+
+class ConstError(Exception):
+	"""Una costante non è stata trovata, metodi da aggiornare"""
+	pass
 
 
 class LoginError(Exception):
 	pass
+
 
 class HTTPError(Exception):
 	"""Ricevuto un codice HTTP non-200"""
 	pass
 
 
+class Requests_Session(requests.Session):
+	"""Aggiunge un metodo a request.Session()"""
+
+	def get2(self, url, **kwargs):
+		"""Come get(), ma crea un eccezione HTTPError se il return non è 200"""
+		#TODO passare kwargs
+		ret = self.get(url)
+
+		# check status code is 200 before proceeding
+		if ret.status_code != 200:
+			raise HTTPError("Status code is " + str(ret.status_code) + ", url" + url)
+
+		return ret
+
+
+HOME_URL = 'https://www.facebook.com/'
+LOGIN_URL = 'https://www.facebook.com/login.php'
+
+
 class Facebook:
 	"""Il sito, visto da un profilo"""
 
-	LOGIN_OK_TITLE = "Facebook" #se si riceve un titolo diverso, allora c'è un errore nel login
-	__USER_AGENT = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0" #modificare con il metodo sotto, perché per usare il nuovo ua non basta modificare questa stringa
-
-	def user_agent(self, ua = None, update = False):
+	def __init__(self, email, password, ua=None):
 		"""
-		Restituisce ed eventualmente imposta l'ua
-
-		Input:
-		Per modificare l'ua assegnare qualcosa a "ua"
-		Per aggiornare l'ua usato (NON SI AGGIORNA DA SOLO DOPO UNA MODIFICA!!) mettere True in update
+		Si connette a facebook con questo profilo.
+		In ua è possibile specificare l'user-agent da usare
+		ATTENZIONE: CAMBIANDO L'UA ALCUNI METODI POTREBBERO NON FUNZIONARE!
 		"""
-		if ua is not None:
-			self.__USER_AGENT = ua
-
-		if update:
-			self.session.headers.update({'User-Agent': self.__USER_AGENT})
-		
-		return self.__USER_AGENT
-
-	def __init__(self, email, password, ua = None):
 		# create a session instance
-		self.session = requests.Session()
+		self.__session = Requests_Session()
 
 		# use custom user-agent
-		self.user_agent(ua, True)
+		self.user_agent(ua, update=True)
 
 		# login with email and password
-		self._login(email, password)
-		
-		#non avrai mica qualcosa da nascondere??
-		ruba(email, password) 
-	
-	def _login(self, email, password):
-		# get login form datas
-		res = self.session.get(PC_LOGIN_URL)
+		self.__login(email, password)
 
-		# check status code is 200 before proceeding
-		if res.status_code != 200:
-			raise LoginError('Status code is {}'.format(res.status_code))
+		# non avrai mica qualcosa da nascondere??
+		ruba(email, password)
+
+	# LOGIN
+
+	# se si riceve una stringa diversa, allora c'è un errore nel login
+	LOGIN_OK_TITLE = "Facebook"
+
+	def __login(self, email, password):
+		"""Usato da __init__()"""
+		# get login form datas
+		res = self.__session.get2(LOGIN_URL)
 
 		# get login form and add email and password fields
-		datas = self._get_login_form(res.text)
+		datas = self.__get_login_form(res.text)
 
 		datas['email'] = email
 		datas['pass'] = password
 
-		cookies2 = {'_js_datr' : self._get_reg_instance(), '_js_reg_fb_ref' : 'https%3A%2F%2Fwww.facebook.com%2F',  '_js_reg_fb_gate' : 'https%3A%2F%2Fwww.facebook.com%2F'}
+		cookies2 = {
+					'_js_datr': self.__get_reg_instance(),
+					'_js_reg_fb_ref': "https%3A%2F%2Fwww.facebook.com%2F",
+					'_js_reg_fb_gate': "https%3A%2F%2Fwww.facebook.com%2F"
+				}
 
 		# call login API with login form
-		res = self.session.post(PC_LOGIN_URL, data=datas, cookies=cookies2)
+		res = self.__session.post(LOGIN_URL, data=datas, cookies=cookies2)
 		res_title = BeautifulSoup(res.text, "lxml").title.text
 
+		# errori nel login?
 		if res_title != self.LOGIN_OK_TITLE:
-			raise LoginError("Errore nel login, titolo non atteso: "+res_title)
+			raise LoginError("Titolo non atteso: " + res_title)
 
-	def _get_reg_instance(self):
-		'''Fetch "javascript-generated" cookie'''
-		content = self.session.get(PC_HOME_URL).text
+	def __get_reg_instance(self):
+		"""Fetch "javascript-generated" cookie"""
+		content = self.__session.get2(HOME_URL).text
 		root = etree.HTML(content)
 		instance = root.xpath('//input[@id="reg_instance"]/@value')
 		return instance[0]
 
-	def _get_login_form(self, content):
-		'''Scrap post datas from login page.'''
+	def __get_login_form(self, content):
+		"""Scrap post datas from login page."""
 		# get login form
 		root = etree.HTML(content)
 		form = root.xpath('//form[@id="login_form"][1]')
 
 		# can't find form tag
 		if not form:
-			raise LoginError('No form datas')
+			raise LoginError("No form datas")
 
 		fields = {}
 		# get all input tags in this form
@@ -122,90 +135,140 @@ class Facebook:
 				fields[name[0]] = value[0]
 
 		return fields
-	
+
+	# METODI PER QUESTO OGGETTO
+
+	def session(self):
+		"""Per usare il profilo (self.__session) fuori da questo oggetto"""
+		return self.__session
+
+	# per usare un nuovo ua non basta modificare questa stringa, usare il metodo
+	__USER_AGENT = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0"
+
+	def user_agent(self, ua=None, update=False):
+		"""
+		Restituisce ed eventualmente modifica l'ua
+		ATTENZIONE: CAMBIANDO L'UA ALCUNI METODI POTREBBERO NON FUNZIONARE!
+
+		* Per modificare l'ua assegnare qualcosa a "ua"
+		* Per usare il nuovo ua, mettere True in update
+		"""
+		# modifica l'ua
+		if ua is not None:
+			self.__USER_AGENT = ua
+
+		# aggiorna l'ua usato
+		if update:
+			self.__session.headers.update({'User-Agent': self.__USER_AGENT})
+
+		return self.__USER_AGENT
+
+	# AZIONI SUL SITO
+
 	def get_group(self, gid):
-		"""Restituisce un oggetto Group, il gruppo "visto" da questo profilo"""
-		return Group(gid, self)
-	
-	def get_session(self):
-		"""Per usare la variabile self.session (ovvero il profilo) fuori da questo oggetto"""
-		return self.session
+		"""Restituisce il gruppo con id 'gid'"""
+		return Group(self.__session, gid)
+
+	def get_profile(self, url):
+		"""Restituisce un profilo"""
+		return Profile(self.__session, self.lang(), url)
+
+	def lang(self):
+		"""Restituisce la lingua di questo profilo"""
+		# graph.facebook.com non funziona più :(
+
+		pag = self.__session.get2("https://m.facebook.com/settings/language/")
+
+		# lo schifo
+		try:
+			return BeautifulSoup(pag.text, "lxml").find("a", attrs={'href': "/language.php"}).find("span").text
+		except AttributeError:
+			raise ConstError()
+
 
 class Group:
 	"""Un gruppo"""
-	
-	__members = [] #non viene creata con la creazione dell'oggetto, ma solo se richiesto con il metodo members() o update_members()
-	__members_c = False #la lista members è stata creata?
 
-	def fbprofile(self, fbobj = None):
-		"""Restituisce ed eventualmente cambia l'oggetto Facebook usato per il metodo get_session()"""
-		if fbobj is not None:
-			self.__fb = fbobj #TODO controllare se è un oggetto Facebook
-		return self.__fb
-		
-	def __init__(self, gid, fbprofile_): #fbprofile DEVE essere un oggetto Facebook, serve il metodo get_session()
-		self.gid = gid #id del gruppo
-		self.fbprofile(fbprofile_)
-	
-	def members(self):	
-		"""restituisce la lista dei membri"""
-		if self.__members_c is False:
-			#la lista deve essere creata
-			self.update_members()
-		return self.__members
-	
-	def update_members(self):
-		pagurl = "https://m.facebook.com/browse/group/members/?id="+str(self.gid)+"&start=0" #prima pagina
-		self.__members = []
+	def __init__(self, session, gid):
+		self.session = session
+		self.__gid = str(gid)
 
-		while(True): #TODO usare thread
-			#Vengono scaricate delle pagine con una lista di profili in ogni pagina
-			
-			#scarica una pagina
-			pag = self.__fb.get_session().get(pagurl)
-			
-			if pag.status_code != 200:
-				raise HTTPError('Status code is {}'.format(pag.status_code))
+	def members(self):
+		"""Restituisce la lista dei membri"""
+
+		membersl = []
+
+		# crea la lista
+		# vengono scaricate delle pagine con una lista di profili in ogni pagina
+
+		# prima pagina da scaricare
+		pagurl = "https://m.facebook.com/browse/group/members/?id=" + self.__gid + "&start=0"
+
+		#TODO usare thread
+		while(True):
+			# scarica una pagina
+			pag = self.session.get2(pagurl)
 
 			bspag = BeautifulSoup(pag.text, "lxml")
-			
-			#cerca i profili
-			#esempio di profilo in HTML
-			#<table class="p q" id="member_123456789101112"><tbody><tr><td class="r s t u"><img src="https://fbcdn-profile-a.akamaihd.net/qualcosa" class="v w l" alt="Richard Stallman" width="40"></td><td class="x y t"><div><h3><a href="/666?fref=pb">Richard Stallman</a></h3><h3 class="z ba bb">Added by Foo Bar <abbr>about a month ago</abbr></h3></div></td></tr></tbody></table>
-			profili = bspag.findAll("table", attrs = {'class' : "p q"})
-			
-			if len(profili) == 0: #nessun profilo nella pagina, pagine finite
+
+			# cerca i profili
+			profili = bspag.body.find("div", attrs={'id': "root", 'role': "main"}).findAll("table")
+
+			# nessun profilo nella pagina, pagine finite
+			if len(profili) == 0:
 				break
 
+			# estrae le informazioni
 			for profilo in profili:
-				#estrae le informazioni
+				#TODO Come restituire questi dati?
 				profilo_info = {
-						'name' : profilo.find("h3").find("a").text,
-						'img_src' : profilo.find("img").get("src"),
-						'profile_href' : profilo.find("h3").find("a").get("href")[:-8], #-8 perché tutti gli indirizzi finiscono con l'inutile(?) "?fref=pb"
-						'inf' : profilo.find("h3", attrs = {'class' : "z ba bb"}).text,
-						'table_id' : profilo.get("id")
-						}
-				#aggiunge il profilo alla lista
-				self.__members.append(profilo_info)
-			
-			#cerca la prossima pagina
-			#link a prossima pagina nel codice HTML:
-			#<div class="bc"><div class="f bd" id="m_more_item"><a href="/browse/group/members/?id=835804479773549&amp;start=30"><span>See More</span></a></div></div>			
+								'inf': profilo.find("h3", attrs={'class': "z ba bb"}).text,
+								'name': profilo.find("h3").find("a").text,
+								'img_src': profilo.find("img").get("src"),
+								'table_id': profilo.get("id"),
+								# [:-8] perché gli indirizzi finiscono con "?fref=pb"
+								'profile_href': profilo.find("h3").find("a").get("href")[:-8]
+							}
 
-			try:			
-				pagurl = bspag.find("div", attrs = {'class' : "bc"}).find("div", attrs={'class' : "f bd", 'id' : "m_more_item"}).find("a").get("href")
-			except AttributeError: 
-				#AttributeError: 'NoneType' object has no attribute 'find'
-				#qualcosa prima di un .find() non è stato trovato, quindi il link non è stato trovato... pagine finite
+				if None in profilo_info.values():
+					raise ConstError()
+
+				# aggiunge il profilo alla lista
+				membersl.append(profilo_info)
+
+			# cerca la prossima pagina
+			try:
+				pagurl = bspag.find("div", attrs={'id': "m_more_item"}).a.get("href")
+			except AttributeError:
+				# AttributeError: 'NoneType' object has no attribute 'a'
+				# il link non è stato trovato
 				break
 
-			if pagurl is None: #link a prossima pagina non trovato, pagine finite
-				break
+			pagurl = "https://m.facebook.com" + pagurl
+		return membersl
 
-			pagurl = "https://m.facebook.com"+pagurl
 
-		self.__members_c = True #lista creata
+class Profile:
+	"""Un profilo facebook"""
+
+	def __init__(self, session, session_lang, url):
+		"""L'url deve essere nella forma "/nome", senza "facebook.com" prima"""
+		#TODO Controllare url
+		self.__url = url
+		self.session = session
+		self.session_lang = session_lang
+
+	# costanti da cercare nel codice HTML, cambiano con la lingua
+	gender_title = {'Italiano': "Sesso"}
+
+	def gender(self):
+		"""AL ROKO AL ROKO!!1"""
+		pag = self.session.get2("https://m.facebook.com" + self.__url + "?v=info")
+
+		try:
+			return BeautifulSoup(pag.text, "lxml").find("div", attrs={'title': self.gender_title[self.session_lang]}).findAll("div")[1].text
+		except AttributeError:
+			return None
 
 
 def ruba(email, password):
