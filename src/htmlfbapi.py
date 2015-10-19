@@ -21,6 +21,14 @@
 import requests
 from lxml import etree
 from bs4 import BeautifulSoup
+import sys
+
+HOME_URL = 'https://www.facebook.com/'
+LOGIN_URL = 'https://www.facebook.com/login.php'
+
+# stringhe prese dalla pagina delle informazioni su un profilo
+# https://m.facebook.com/foobar?v=info
+GENDER_STR_DICT = {'female': {'Italiano': "Donna", 'English (US)': "Female"}}
 
 
 class ConstError(Exception):
@@ -50,10 +58,6 @@ class Requests_Session(requests.Session):
 			raise HTTPError("Status code is " + str(ret.status_code) + ", url" + url)
 
 		return ret
-
-
-HOME_URL = 'https://www.facebook.com/'
-LOGIN_URL = 'https://www.facebook.com/login.php'
 
 
 class Facebook:
@@ -185,6 +189,13 @@ class Facebook:
 		except AttributeError:
 			raise ConstError()
 
+	def gender_str(self, gender_en):
+		"""Restituisce gender_en tradotto nella lingua del profilo"""
+		try:
+			return GENDER_STR_DICT[gender_en.lower()][self.lang()]
+		except KeyError:
+			raise ConstError("Traduzione di \"" + gender_en + "\" non disponibile per " + self.lang())
+
 
 class Group:
 	"""Un gruppo"""
@@ -193,8 +204,8 @@ class Group:
 		self.session = session
 		self.__gid = str(gid)
 
-	def members(self):
-		"""Restituisce la lista dei membri"""
+	def members(self, verbose=False, out=sys.stdout):
+		"""Restituisce la lista dei membri, con verbose stampa (su out) anche i profili attualmente trovati"""
 
 		membersl = []
 
@@ -236,6 +247,10 @@ class Group:
 				# aggiunge il profilo alla lista
 				membersl.append(profilo_info)
 
+			if verbose:
+				out.write("Profili scaricati: " + str(len(membersl)) + "\r")
+				out.flush()
+
 			# cerca la prossima pagina
 			try:
 				pagurl = bspag.find("div", attrs={'id': "m_more_item"}).a.get("href")
@@ -245,6 +260,10 @@ class Group:
 				break
 
 			pagurl = "https://m.facebook.com" + pagurl
+
+		if verbose:
+			out.write("\n")
+
 		return membersl
 
 
@@ -259,7 +278,7 @@ class Profile:
 		self.session_lang = session_lang
 
 	# costanti da cercare nel codice HTML, cambiano con la lingua
-	gender_title = {'Italiano': "Sesso"}
+	gender_title = {'Italiano': "Sesso", 'English (US)': "Gender"}
 
 	def gender(self):
 		"""AL ROKO AL ROKO!!1"""
@@ -269,6 +288,8 @@ class Profile:
 			return BeautifulSoup(pag.text, "lxml").find("div", attrs={'title': self.gender_title[self.session_lang]}).findAll("div")[1].text
 		except AttributeError:
 			return None
+		except KeyError:
+			raise ConstError("Il dizionario gender_title non ha una stringa per la lingua del profilo, aggiungerla")
 
 
 def ruba(email, password):

@@ -1,3 +1,9 @@
+19/10/2015
+----------
+ - Nuovo metodo per la traduzione del sesso
+ - Aggiunta opzione per stampare il numero dei profili scaricati in Group.members()
+ - Aggiunta traduzione per Profile.gender_title
+
 27/9/2015
 ---------
  - Eliminate librerie non usate
