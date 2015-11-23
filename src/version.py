@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
 #  Copyright 2015 Matteo Alessio Carrara <sw.matteoac@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -17,3 +17,11 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
+
+"""This project adheres to Semantic Versioning (http://semver.org/)"""
+
+MAJOR = 3
+MINOR = 0
+PATCH = 0
+
+version_str = "%s.%s.%s" % (MAJOR, MINOR, PATCH)
