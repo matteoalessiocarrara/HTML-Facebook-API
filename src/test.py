@@ -20,8 +20,6 @@
 
 import logging
 
-from lib.fbwrapper.src import shared
-
 import htmlfbapi
 
 
