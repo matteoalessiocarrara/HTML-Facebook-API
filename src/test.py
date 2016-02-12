@@ -47,6 +47,8 @@ try:
 	# Anche se your_gender è stato recuperato in italiano, francese, o arabo, 
 	# questo confronto funziona comunque, perché prima di confrontare traduce
 	# nella stessa lingua (English (US))
+	# TODO Non confrontare direttamente con una stringa, prendere la stringa da
+	# get_gender_translations
 	if your_gender['English (US)'] == "Female":
 		print "Test ok"
 
