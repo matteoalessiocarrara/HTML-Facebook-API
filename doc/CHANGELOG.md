@@ -2,8 +2,16 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [3.0.0] - 2015-11-22
-### Added
+
+## 2016/02/12 4.0.0 ##
+
+ - Completamente ripensato il funzionamento, divisa la libreria in librerie più
+   piccole (human-virtualbrowser - bot-virtualbrowser - facebook-wrapper - htmlfbapi)
+  
+ 
+## 2015/11/22 3.0.0 ##
+
+Added
  - htmlfbapi.Facebook.get_email()
  - htmlfbapi.Facebook.get_password()
  - htmlfbapi.Group.get_gid()
@@ -23,7 +31,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
  - Migliorate informazioni per il debug
  - File version.py, aggiunta versione della libreria
 
-### Changed
+Changed
  - htmlfbap.GENDER_STR_DICT -> translations.GENDER_STR_NDICT
  - htmlfbapi.Requests_Session -> myrequests.Session
  - htmlfbapi.Requests_Session.get2(url) -> myrequests.Session.get2(url, \**kwargs)
@@ -37,41 +45,43 @@ This project adheres to [Semantic Versioning](http://semver.org/).
  - htmlfbapi.Profile.gender() ->  htmlfbapi.Profile.get_gender()
  - Eccezioni spostate nel file myexceptions.py
 
-#### Removed
+Removed
  - htmlfbapi.HOME_URL
  - htmlfbapi.LOGIN_URL
  - htmlfbapi.HTTPError
  - htmlfbapi.Facebook.LOGIN_OK_TITLE
  - htmlfbapi.Profile.gender_title
 
-#### Fixed
+Fixed
  - myrequests.Session.get2 adesso utilizza i kwargs
  - htmlfbapi.Profile.get_gender() adesso restituisce sempre una stringa,
    anche in caso di sesso non trovato
 
 
-## [2.1.0] - 2015-10-19
-### Added
+## 2015/10/19 2.1.0 ##
+
+Added
  - Nuovo metodo per la traduzione del sesso, Facebook.gender_str()
  - Aggiunta opzione per stampare il numero dei profili scaricati in Group.members()
  - Aggiunta traduzione per Profile.gender_title
 
 
-## [2.0.0] - 2015-9-27
-### Removed
+## 2015/9/27 2.0.0 ##
+
+Removed
  - Eliminate librerie non usate
 
-### Changed
+Changed
  - Migliorato codice
  - Migliorata documentazione
 
-### Added
+Added
  - Nuovi metodi
  - Nuovo oggetto Profile
 
-### Fixed
+Fixed
  - Risolto bug con il metodo Group.members()
 
 
-## [1.0.0] - 2015-9-24
+## 2015/9/24 1.0.0 ## 
  - Prima versione

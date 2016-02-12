@@ -22,8 +22,11 @@
 
 import logging
 
-# configurazione del sistema di logging
-logger = logging.getLogger(__name__)
+import version
+
+
+# Configurazione del sistema di logging
+logger = logging.getLogger(version.lib_name)
 logger.addHandler(logging.NullHandler())
 
 
@@ -37,11 +40,18 @@ class LoginError(Exception):
 
 	def __init__(self, message, res_title, res_text, email, password, *args):
 		"""
+		Imposta self.res_title, self.res_text, self.email, self.password
+		
+		
 		Parametri:
-		* res_title dovrebbe essere il titolo della pagina HTML restituita
-		* res_text l'HTML della pagina restituita
+		
+			res_title:
+				Il titolo della pagina HTML restituita
+				
+			res_text:
+				L'HTML della pagina restituita
 		"""
-		# without this you may get DeprecationWarning
+		# Without this you may get DeprecationWarning
 		self.message = message
 
 		self.res_title = res_title
@@ -49,5 +59,5 @@ class LoginError(Exception):
 		self.email = email
 		self.password = password
 
-		# allow users initialize misc. arguments as any other builtin Error
+		# Allow users initialize misc. arguments as any other builtin Error
 		super(LoginError, self).__init__(message, res_title, res_text, email, password, *args)

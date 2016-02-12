@@ -25,7 +25,7 @@ il parametro --version nei software GNU
 
 # Name
 
-lib_name = "lib-htmlfbapi" 
+lib_name = "lib-bot-virtualbrowser" 
 
 # Version
 # This project adheres to Semantic Versioning (http://semver.org/)
@@ -38,7 +38,7 @@ version_str = "%d.%d.%d" % (version_major, version_minor, version_patch)
 
 # Lib
 # Numero di versione major
-fbwrapper_version_required = 1
+virtualbrowser_version_required = 1
 
 # Copyright
 
