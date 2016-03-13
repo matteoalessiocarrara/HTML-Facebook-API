@@ -3,6 +3,15 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 
+## 2016/03/13 4.1.0 ##
+
+Changed
+ - Aggiornata libreria facebook-wrapper
+ 
+Fixed
+ - Numero fi versione sbagliato in version.py! 1.0.0 -> 4.1.0
+
+ 
 ## 2016/02/12 4.0.0 ##
 
  - Completamente ripensato il funzionamento, divisa la libreria in librerie più

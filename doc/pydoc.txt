@@ -265,9 +265,9 @@ DATA
     fbwrapper_version_required = 1
     lib_name = 'lib-htmlfbapi'
     license = 'License GPLv3+: GNU GPL version 3 or later <http...e is NO ...
-    version_major = 1
-    version_minor = 0
+    version_major = 4
+    version_minor = 1
     version_patch = 0
-    version_str = '1.0.0'
+    version_str = '4.1.0'
 
 
